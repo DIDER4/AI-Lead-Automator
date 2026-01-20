@@ -117,7 +117,7 @@ class Constants:
     
     # UI Constants
     PAGE_TITLE = "AI Lead Automator"
-    PAGE_ICON = "🚀"
+    PAGE_ICON = ""
     LAYOUT = "wide"
     
     # AI Models

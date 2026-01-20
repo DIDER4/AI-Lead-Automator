@@ -115,7 +115,7 @@ def render_lead_card(lead: Lead):
     st.markdown(f"""
     <div style="background: linear-gradient(135deg, #{color}22 0%, #{color}11 100%); 
                 padding: 1rem; border-radius: 10px; border-left: 4px solid {color};">
-        <h3>🏢 {lead.company_name}</h3>
+        <h3>{lead.company_name}</h3>
         <strong>Score:</strong> {lead.lead_score}/100 - {lead.qualification_status}<br>
         <strong>Industry:</strong> {lead.industry}<br>
         <strong>URL:</strong> <a href="{lead.url}" target="_blank">{lead.url}</a>
@@ -126,11 +126,11 @@ def render_lead_card(lead: Lead):
     st.markdown(f"**Key Insights:**\n{lead.key_insights}")
     st.markdown(f"**ICP Fit Analysis:**\n{lead.fit_analysis}")
     
-    with st.expander("📧 Personalized Email Draft"):
+    with st.expander("Personalized Email Draft"):
         st.text_area("Email", value=lead.personalized_email, height=200, 
                      key=f"email_{lead.id}")
     
-    with st.expander("📱 SMS Draft"):
+    with st.expander("SMS Draft"):
         st.text_area("SMS", value=lead.sms_draft, height=80, 
                      key=f"sms_{lead.id}")
 
@@ -214,7 +214,7 @@ def render_metrics_row(leads: List[Lead]):
 
 def render_sidebar_stats(leads: List[Lead]):
     """Render statistics in sidebar"""
-    st.sidebar.markdown("### 📊 Quick Stats")
+    st.sidebar.markdown("### Quick Stats")
     st.sidebar.metric("Total Leads", len(leads))
     
     if leads:

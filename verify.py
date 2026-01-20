@@ -167,12 +167,12 @@ def main():
     print("="*60)
     
     if deps_ok and struct_ok and imports_ok:
-        print("✅ All checks passed!")
-        print("🚀 Ready to run: streamlit run app.py")
+        print("[OK] All checks passed!")
+        print("Ready to run: streamlit run app.py")
         return 0
     else:
-        print("❌ Some checks failed")
-        print("📝 Review the output above for details")
+        print("[FAIL] Some checks failed")
+        print("Review the output above for details")
         return 1
 
 

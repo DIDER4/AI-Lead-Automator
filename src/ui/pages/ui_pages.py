@@ -38,18 +38,18 @@ class UIPages:
         if not config.has_valid_firecrawl_key() or not config.has_valid_ai_key():
             st.warning(" **Test Mode Active** - Configure API keys in Settings to use real data. Currently using mock data for demonstration.")
         
-        st.markdown("## 🎯 How It Works")
+        st.markdown("## How It Works")
         render_workflow_cards()
         
         # Features
         st.markdown("---")
-        st.markdown("## ✨ Key Features")
+        st.markdown("## Key Features")
         
         col1, col2, col3 = st.columns(3)
         
         with col1:
             st.markdown("""
-            ### 🔒 Secure
+            ### Secure
             - Encrypted API key storage
             - Local data processing
             - GDPR-compliant exports
@@ -57,7 +57,7 @@ class UIPages:
         
         with col2:
             st.markdown("""
-            ### 🎯 Intelligent
+            ### Intelligent
             - AI-powered lead scoring
             - Personalized email generation
             - Industry analysis
@@ -65,7 +65,7 @@ class UIPages:
         
         with col3:
             st.markdown("""
-            ### 📊 Insightful
+            ### Insightful
             - Visual analytics dashboard
             - Lead qualification tracking
             - Export to Excel/CSV
@@ -75,12 +75,12 @@ class UIPages:
         leads = self.data_manager.load_all()
         if leads:
             st.markdown("---")
-            st.markdown("## 📈 Your Stats")
+            st.markdown("## Your Stats")
             render_metrics_row(leads)
     
     def render_settings(self):
         """Render settings page"""
-        st.title("⚙️ Settings & Security")
+        st.title("Settings & Security")
         st.markdown("Configure your API keys. All keys are encrypted locally.")
         
         # Load current config
@@ -159,7 +159,7 @@ class UIPages:
         
         # Security info
         st.markdown("---")
-        st.markdown("### 🔒 Security Information")
+        st.markdown("### Security Information")
         st.info("""
         **Data Protection:**
         - ✅ API keys encrypted with Fernet
@@ -169,7 +169,7 @@ class UIPages:
     
     def render_profile(self):
         """Render user profile page"""
-        st.title("👤 User Profile")
+        st.title("User Profile")
         st.markdown("Define your company profile to guide AI analysis.")
         
         config_dict = self.config_manager.load()
@@ -215,7 +215,7 @@ class UIPages:
     
     def render_lead_chat(self):
         """Render lead chat page"""
-        st.title("💬 Lead Chat & Analyzer")
+        st.title("Lead Chat & Analyzer")
         
         config_dict = self.config_manager.load()
         config = AppConfig(**config_dict) if config_dict else AppConfig()
@@ -299,12 +299,12 @@ class UIPages:
         recent = sorted(leads, key=lambda x: x.timestamp, reverse=True)[:5]
         
         for lead in recent:
-            with st.expander(f"🏢 {lead.company_name} - Score: {lead.lead_score}"):
+            with st.expander(f"{lead.company_name} - Score: {lead.lead_score}"):
                 render_lead_card(lead)
     
     def render_dashboard(self):
         """Render dashboard page"""
-        st.title("📊 Dashboard & Analytics")
+        st.title("Dashboard & Analytics")
         
         leads = self.data_manager.load_all()
         
@@ -354,12 +354,12 @@ class UIPages:
         
         # Export
         st.markdown("---")
-        st.markdown("### 📥 Export Data")
+        st.markdown("### Export Data")
         
         col1, col2, col3 = st.columns([1, 1, 2])
         
         with col1:
-            gdpr_safe = st.checkbox("🔒 GDPR Safe Mode", value=False)
+            gdpr_safe = st.checkbox("GDPR Safe Mode", value=False)
         
         with col2:
             export_format = st.selectbox("Format", ["Excel (.xlsx)", "CSV (.csv)"])

@@ -51,17 +51,17 @@ def render_sidebar(data_manager: DataManager):
     page = st.sidebar.radio(
         "Navigation",
         [
-            "🏠 Home",
-            "⚙️ Settings",
-            "👤 User Profile",
-            "💬 Lead Chat",
-            "📊 Dashboard"
+            "Home",
+            "Settings",
+            "User Profile",
+            "Lead Chat",
+            "Dashboard"
         ]
     )
     
     # Quick stats
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📊 Quick Stats")
+    st.sidebar.markdown("### Quick Stats")
     
     leads = data_manager.load_all()
     st.sidebar.metric("Total Leads", len(leads))
@@ -74,12 +74,12 @@ def render_sidebar(data_manager: DataManager):
     st.sidebar.markdown("---")
     st.sidebar.markdown(f"""
     <small>
-    <strong>🔒 100% Local & Secure</strong><br>
+    <strong>100% Local & Secure</strong><br>
     All data stored on your computer<br>
     API keys encrypted with Fernet<br><br>
     <strong>Version:</strong> {Constants.APP_VERSION}<br>
     <strong>Powered by:</strong><br>
-    Firecrawl |  AI |  Streamlit
+    Firecrawl | AI | Streamlit
     </small>
     """, unsafe_allow_html=True)
     
@@ -101,23 +101,23 @@ def main():
         page = render_sidebar(data_manager)
         
         # Route to appropriate page
-        if page == "🏠 Home":
+        if page == "Home":
             logger.debug("Rendering Home page")
             ui_pages.render_home()
         
-        elif page == "⚙️ Settings":
+        elif page == "Settings":
             logger.debug("Rendering Settings page")
             ui_pages.render_settings()
         
-        elif page == "👤 User Profile":
+        elif page == "User Profile":
             logger.debug("Rendering User Profile page")
             ui_pages.render_profile()
         
-        elif page == "💬 Lead Chat":
+        elif page == "Lead Chat":
             logger.debug("Rendering Lead Chat page")
             ui_pages.render_lead_chat()
         
-        elif page == "📊 Dashboard":
+        elif page == "Dashboard":
             logger.debug("Rendering Dashboard page")
             ui_pages.render_dashboard()
         

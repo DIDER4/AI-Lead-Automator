@@ -159,21 +159,21 @@ streamlit run app.py
 
 ### **Initial Setup**
 
-1. **Configure API Keys** (⚙️ Settings page)
+1. **Configure API Keys** (Settings page)
    - Add Firecrawl API key
    - Add AI provider key (OpenAI or Anthropic)
    - Keys are automatically encrypted with Fernet
 
-2. **Set Up Profile** (👤 User Profile page)
+2. **Set Up Profile** (User Profile page)
    - Enter your company website
    - Define your value proposition
    - Specify your Ideal Customer Profile (ICP)
 
-3. **Test Functionality** (💬 Lead Chat page)
+3. **Test Functionality** (Lead Chat page)
    - Analyze a single lead URL
    - Try bulk processing with multiple URLs
 
-4. **View Results** (📊 Dashboard page)
+4. **View Results** (Dashboard page)
    - Explore 8 pre-loaded test leads
    - Export data in Excel/CSV format
 
@@ -199,7 +199,7 @@ Test mode is enabled automatically when:
 
 **To run in Test Mode:**
 1. Simply launch the application without configuring API keys
-2. Go directly to 💬 Lead Chat page
+2. Go directly to Lead Chat page
 3. Enter any URL (e.g., `https://example.com`)
 4. Click "Analyze Lead" to see mock results
 
@@ -207,7 +207,7 @@ Test mode is enabled automatically when:
 
 To use real API calls and live data:
 
-1. **Go to ⚙️ Settings Page**
+1. **Go to Settings Page**
 2. **Add Firecrawl API Key**
    - Get your key from https://firecrawl.dev
    - Enter key and click "Save API Keys"
