@@ -2,6 +2,8 @@
 
 A comprehensive, secure, and modular desktop application for intelligent B2B lead generation and qualification powered by AI and Firecrawl.
 
+![AI LEAD GIF](https://github.com/user-attachments/assets/9b430048-7c3a-4290-b998-29a1401f736f)
+
 ---
 
 ## Overview
