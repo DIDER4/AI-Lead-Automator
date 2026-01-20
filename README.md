@@ -343,16 +343,6 @@ streamlit run app.py --server.runOnSave true
 
 ---
 
-## Statistics
-
-- **Total Modules**: 25+ Python files
-- **Lines of Code**: ~3,000+ (excluding comments/blanks)
-- **Test Coverage**: Security module fully tested
-- **Dependencies**: 18 total (8 production + 10 development)
-- **Security Score**: A+ (encryption, validation, GDPR)
-
----
-
 ## Testing
 
 ### **Available Tests**
