@@ -1,10 +1,10 @@
-# 🚀 AI Lead Automator
+# AI Lead Automator
 
 A comprehensive, secure, and modular desktop application for intelligent B2B lead generation and qualification powered by AI and Firecrawl.
 
 ---
 
-## 🎯 Overview
+## Overview
 
 **Production-ready Python application for AI-powered B2B lead generation and qualification.**
 
@@ -14,7 +14,7 @@ A comprehensive, secure, and modular desktop application for intelligent B2B lea
 
 ---
 
-## 🎨 Features
+## Features
 
 ### **Core Functionality**
 - ✅ **Web Scraping**: Firecrawl API integration with retry logic
@@ -26,22 +26,22 @@ A comprehensive, secure, and modular desktop application for intelligent B2B lea
 - ✅ **Data Export**: Excel/CSV with GDPR-compliant mode
 
 ### **Security Features**
-- 🔒 **Encryption**: Fernet symmetric encryption (256-bit) for API keys
-- 🛡️ **Input Validation**: XSS, SQL injection, path traversal prevention
-- 📝 **Audit Logging**: Comprehensive logs without exposing secrets
-- 🔐 **Key Rotation**: Support for encryption key rotation
-- 🌍 **GDPR**: Personal data redaction for compliance
+- **Encryption**: Fernet symmetric encryption (256-bit) for API keys
+- **Input Validation**: XSS, SQL injection, path traversal prevention
+- **Audit Logging**: Comprehensive logs without exposing secrets
+- **Key Rotation**: Support for encryption key rotation
+- **GDPR**: Personal data redaction for compliance
 
 ### **User Interface**
-- 🏠 **Home**: Welcome page with workflow explanation
-- ⚙️ **Settings**: Encrypted API key management
-- 👤 **Profile**: Define ICP and value proposition
-- 💬 **Lead Chat**: Single and bulk URL analysis
-- 📊 **Dashboard**: Visual analytics with Plotly charts
+- **Home**: Welcome page with workflow explanation
+- **Settings**: Encrypted API key management
+- **Profile**: Define ICP and value proposition
+- **Lead Chat**: Single and bulk URL analysis
+- **Dashboard**: Visual analytics with Plotly charts
 
 ---
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 AI Lead Automator/
@@ -103,7 +103,7 @@ AI Lead Automator/
 
 ---
 
-## 🔧 Module Responsibilities
+## Module Responsibilities
 
 ### **`src/config.py`**
 - Application configuration management
@@ -136,7 +136,7 @@ AI Lead Automator/
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### **Installation**
 
@@ -179,7 +179,7 @@ streamlit run app.py
 
 ---
 
-## 🧪 Test Mode
+## Test Mode
 
 The application includes a **Test Mode** that allows you to test all functionality without requiring API keys or making real API calls. This is perfect for demonstrations, development, or trying the application before purchasing API subscriptions.
 
@@ -222,7 +222,7 @@ Once valid API keys are detected, test mode automatically deactivates and real A
 
 ---
 
-## 📈 Performance Metrics
+## Performance Metrics
 
 - **Single Lead Analysis**: 5-10 seconds
   - Scraping: 2-3 seconds
@@ -238,7 +238,7 @@ Once valid API keys are detected, test mode automatically deactivates and real A
 
 ---
 
-## 🔒 Security Features
+## Security Features
 
 ### **Enterprise-Grade Protection**
 
@@ -272,7 +272,7 @@ Once valid API keys are detected, test mode automatically deactivates and real A
 
 ---
 
-## 🛡️ Security Considerations
+## Security Considerations
 
 ### **Critical Files (DO NOT SHARE)**
 - `data/secret.key` - Fernet encryption key
@@ -286,7 +286,7 @@ Once valid API keys are detected, test mode automatically deactivates and real A
 
 ---
 
-## 📊 API Usage & Costs
+## API Usage & Costs
 
 ### **Firecrawl**
 - **Cost**: ~$0.01-0.05 per page
@@ -305,7 +305,7 @@ Once valid API keys are detected, test mode automatically deactivates and real A
 
 ---
 
-## 📖 Development
+## Development
 
 ### **Running Tests**
 ```bash
@@ -343,7 +343,7 @@ streamlit run app.py --server.runOnSave true
 
 ---
 
-## 📊 Statistics
+## Statistics
 
 - **Total Modules**: 25+ Python files
 - **Lines of Code**: ~3,000+ (excluding comments/blanks)
@@ -353,7 +353,7 @@ streamlit run app.py --server.runOnSave true
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ### **Available Tests**
 - ✅ Security module (encryption, validation)
@@ -375,7 +375,7 @@ pytest tests/ -v --cov=src
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 - **README.md**: This file (complete guide)
 - **.env.example**: Environment variables template
@@ -383,7 +383,7 @@ pytest tests/ -v --cov=src
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### **Common Issues**
 
@@ -411,7 +411,7 @@ streamlit run app.py
 
 ---
 
-## 📞 Support & Resources
+## Support & Resources
 
 ### **Documentation Links**
 - **Streamlit**: https://docs.streamlit.io
@@ -426,7 +426,7 @@ streamlit run app.py
 
 ---
 
-## ⚖️ License
+## License
 
 This project is proprietary software. All rights reserved.
 
