@@ -100,11 +100,11 @@ AI Lead Automator/
 │
 ├── data/                                # Data storage (auto-created)
 │   ├── leads_data.json                  # Lead database
-│   ├── secret.key                       # Encryption key (DO NOT COMMIT)
+│   ├── secret.key                       # Encryption key 
 │   ├── config.encrypted                 # Encrypted configuration
-│   ├── chroma_db/                       # ChromaDB vector database (DO NOT COMMIT)
+│   ├── chroma_db/                       # ChromaDB vector database 
 │   │   └── [vector embeddings]          # Persistent vector storage
-│   └── documents/                       # Uploaded knowledge base files (DO NOT COMMIT)
+│   └── documents/                       # Uploaded knowledge base files 
 │       ├── documents_metadata.json      # Document metadata tracking
 │       └── [uuid]_[filename]            # Stored original files
 │
