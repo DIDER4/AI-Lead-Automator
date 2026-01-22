@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from src.config import Constants, get_logger
 from src.security import SecureConfigManager
 from src.services import DataManager
+from src.services.knowledge_base import KnowledgeBaseService
 from src.ui import UIPages
 
 # Initialize logger
@@ -42,7 +43,7 @@ def configure_page():
     logger.info(f"Starting {Constants.APP_NAME} v{Constants.APP_VERSION}")
 
 
-def render_sidebar(data_manager: DataManager):
+def render_sidebar(data_manager: DataManager, kb_stats: dict):
     """Render sidebar navigation and stats"""
     st.sidebar.title(f"{Constants.PAGE_ICON} {Constants.APP_NAME}")
     st.sidebar.markdown("---")
@@ -54,6 +55,7 @@ def render_sidebar(data_manager: DataManager):
             "Home",
             "Settings",
             "User Profile",
+            "Knowledge Base",
             "Lead Chat",
             "Dashboard"
         ]
@@ -69,6 +71,10 @@ def render_sidebar(data_manager: DataManager):
     if leads:
         avg_score = sum(l.lead_score for l in leads) / len(leads)
         st.sidebar.metric("Avg Score", f"{avg_score:.0f}")
+    
+    # KB stats
+    if kb_stats['total_documents'] > 0:
+        st.sidebar.metric("KB Documents", kb_stats['total_documents'])
     
     # System info
     st.sidebar.markdown("---")
@@ -92,13 +98,25 @@ def main():
         # Configure page
         configure_page()
         
-        # Initialize core components
+        # Initialize core managers
         config_manager = SecureConfigManager()
         data_manager = DataManager()
+        logger.info("Core managers initialized")
+        
+        # Initialize Knowledge Base Service
+        try:
+            kb_service = KnowledgeBaseService()
+            kb_stats = kb_service.get_stats()
+            logger.info("Knowledge Base Service initialized successfully")
+        except Exception as e:
+            logger.warning(f"Knowledge Base Service failed to initialize: {e}")
+            kb_service = None
+            kb_stats = {'total_documents': 0, 'total_chunks': 0, 'doc_types': {}}
+        
         ui_pages = UIPages(config_manager, data_manager)
         
         # Render sidebar and get selected page
-        page = render_sidebar(data_manager)
+        page = render_sidebar(data_manager, kb_stats)
         
         # Route to appropriate page
         if page == "Home":
@@ -113,8 +131,18 @@ def main():
             logger.debug("Rendering User Profile page")
             ui_pages.render_profile()
         
+        elif page == "Knowledge Base":
+            logger.debug("Rendering Knowledge Base page")
+            if kb_service:
+                ui_pages.render_knowledge_base(kb_service)
+            else:
+                st.error("Knowledge Base service failed to initialize. Check logs for details.")
+        
         elif page == "Lead Chat":
             logger.debug("Rendering Lead Chat page")
+            # Pass KB service to Lead Chat for RAG integration
+            if kb_service:
+                st.session_state['kb_service'] = kb_service
             ui_pages.render_lead_chat()
         
         elif page == "Dashboard":

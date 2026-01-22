@@ -137,20 +137,35 @@ class OpenAIClient:
             return {"error": f"OpenAI error: {str(e)}"}
     
     def _build_prompt(self, content: str, user_profile: Dict, url: str) -> str:
-        """Build analysis prompt"""
+        """Build analysis prompt with optional RAG context"""
         # Truncate content if too long
         max_length = Constants.MAX_CONTENT_LENGTH
         if len(content) > max_length:
             content = content[:max_length]
             logger.debug(f"Content truncated to {max_length} characters")
         
+        # Check for RAG context
+        rag_context = user_profile.get('knowledge_base_context', '')
+        
+        # Build base prompt
         prompt = f"""You are an expert B2B lead qualification analyst. Analyze the following company website content and score it as a potential lead.
 
 USER PROFILE (Your Company):
 - Website: {user_profile.get('my_website', 'N/A')}
 - Value Proposition: {user_profile.get('my_value_proposition', 'N/A')}
 - Ideal Customer Profile: {user_profile.get('my_icp', 'N/A')}
+"""
+        
+        # Add RAG context if available
+        if rag_context:
+            prompt += f"""
+COMPANY KNOWLEDGE BASE (use this to inform your analysis):
+{rag_context}
 
+"""
+        
+        # Add website content
+        prompt += f"""
 COMPANY WEBSITE CONTENT (scraped from {url}):
 {content}
 
@@ -162,12 +177,12 @@ Please provide a detailed analysis in the following JSON format:
     "industry": "<identified industry>",
     "key_insights": "<3-5 key insights about the company>",
     "fit_analysis": "<why they are/aren't a good fit for our ICP>",
-    "personalized_email": "<draft a personalized outreach email referencing specific content from their website>",
+    "personalized_email": "<draft a personalized outreach email referencing specific content from their website{' and our company knowledge' if rag_context else ''}>",
     "sms_draft": "<draft a short SMS message (max 160 chars)>",
     "recommended_action": "<Qualified/Disqualified/Further Research>"
 }}
 
-Be specific and reference actual content found on their website."""
+Be specific and reference actual content found on their website{' and use insights from our company knowledge base to personalize the outreach' if rag_context else ''}."""
         
         return prompt
     

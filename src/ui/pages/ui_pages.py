@@ -224,6 +224,10 @@ class UIPages:
         is_firecrawl_test = not config.has_valid_firecrawl_key()
         is_ai_test = not config.has_valid_ai_key()
         
+        # Check if Knowledge Base is available
+        kb_service = st.session_state.get('kb_service', None)
+        kb_active = kb_service and kb_service.get_stats()['total_documents'] > 0
+        
         if is_firecrawl_test or is_ai_test:
             test_components = []
             if is_firecrawl_test:
@@ -233,8 +237,15 @@ class UIPages:
             
             st.info(f"**TEST MODE ACTIVE**: Using mock data for {' and '.join(test_components)}. Configure real API keys in Settings for production use.")
         
-        # Initialize analyzer (will use test mode automatically if no keys)
-        analyzer = LeadAnalyzer(config, self.data_manager)
+        # Show KB status
+        if kb_active:
+            kb_stats = kb_service.get_stats()
+            st.success(f"✨ **Knowledge Base Active**: {kb_stats['total_documents']} documents loaded. AI will use your company knowledge for personalized analysis.")
+        else:
+            st.info("💡 Upload documents to Knowledge Base for AI-powered analysis using your company information.")
+        
+        # Initialize analyzer with KB support
+        analyzer = LeadAnalyzer(config, self.data_manager, knowledge_base=kb_service)
         
         # URL input
         st.markdown("### Prospect URL")
@@ -385,4 +396,159 @@ class UIPages:
                 data=csv,
                 file_name=f"leads_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                 mime="text/csv"
-            )
+            )    
+    def render_knowledge_base(self, knowledge_base_service):
+        """Render Knowledge Base management page"""
+        st.title("Knowledge Base")
+        st.markdown("Upload company documents to enhance AI analysis with your own content.")
+        
+        if not knowledge_base_service:
+            st.error("Knowledge Base service not initialized. Please restart the application.")
+            return
+        
+        # Get statistics
+        stats = knowledge_base_service.get_stats()
+        
+        # Display enhanced stats
+        st.markdown("### Knowledge Base Statistics")
+        
+        # Show all metrics in one row if documents exist
+        if stats['total_documents'] > 0:
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Documents", stats['total_documents'])
+            with col2:
+                st.metric("Chunks", stats['total_chunks'])
+            with col3:
+                st.metric("Characters", f"{stats.get('total_characters', 0):,}")
+            with col4:
+                st.metric("Tokens", f"{stats.get('total_tokens', 0):,}")
+            
+            # Second row with additional metrics
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Est. Cost", f"${stats.get('total_embedding_cost', 0):.4f}")
+            with col2:
+                doc_types = ", ".join([f"{k.upper()}: {v}" for k, v in stats['doc_types'].items()])
+                st.metric("Document Types", doc_types if doc_types else "None")
+        else:
+            # If no documents, show minimal stats
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Documents", 0)
+            with col2:
+                st.metric("Chunks", 0)
+        
+        st.markdown("---")
+        
+        # Upload section
+        st.markdown("### Upload Documents")
+        st.info("📄 Supported formats: PDF, TXT, DOCX | Documents will be chunked and embedded for semantic search")
+        
+        uploaded_file = st.file_uploader(
+            "Choose a file",
+            type=['pdf', 'txt', 'docx'],
+            help="Upload documents containing company information, product details, case studies, etc."
+        )
+        
+        if uploaded_file:
+            col1, col2 = st.columns([3, 1])
+            
+            with col1:
+                st.write(f"**File:** {uploaded_file.name}")
+                st.write(f"**Size:** {uploaded_file.size / 1024:.1f} KB")
+            
+            with col2:
+                if st.button("Upload & Index", type="primary", use_container_width=True):
+                    with st.spinner("Processing document..."):
+                        # Save temporary file
+                        temp_path = f"data/temp_{uploaded_file.name}"
+                        with open(temp_path, "wb") as f:
+                            f.write(uploaded_file.getbuffer())
+                        
+                        # Add to knowledge base
+                        success, message, document = knowledge_base_service.add_document(
+                            temp_path,
+                            uploaded_file.name
+                        )
+                        
+                        # Clean up temp file
+                        import os
+                        if os.path.exists(temp_path):
+                            os.remove(temp_path)
+                        
+                        if success:
+                            st.success(f"✅ {message}")
+                            st.info(f"Created {document.num_chunks} searchable chunks")
+                            time.sleep(1)
+                            st.rerun()
+                        else:
+                            st.error(f"❌ {message}")
+        
+        st.markdown("---")
+        
+        # Document list
+        st.markdown("### Uploaded Documents")
+        
+        documents = knowledge_base_service.list_documents()
+        
+        if not documents:
+            st.info("No documents uploaded yet. Upload your first document above.")
+        else:
+            for doc in documents:
+                with st.expander(f"📄 {doc.filename} ({doc.get_display_size()})"):
+                    col1, col2 = st.columns([3, 1])
+                    
+                    with col1:
+                        st.write(f"**Type:** {doc.doc_type.upper()} • **Size:** {doc.get_display_size()}")
+                        st.write(f"**Uploaded:** {doc.get_upload_date_formatted()}")
+                        
+                        # Enhanced metrics
+                        metrics_col1, metrics_col2, metrics_col3 = st.columns(3)
+                        with metrics_col1:
+                            st.metric("Characters", doc.get_formatted_char_count())
+                        with metrics_col2:
+                            st.metric("Est. Tokens", doc.get_formatted_token_count())
+                        with metrics_col3:
+                            st.metric("Chunks", doc.num_chunks)
+                        
+                        # Additional info
+                        st.write(f"**Avg chunk size:** {doc.avg_chunk_size:.0f} chars")
+                        st.write(f"**Embedding cost estimate:** {doc.get_formatted_cost()} (if using OpenAI)")
+                        st.write(f"**Last modified:** {doc.get_upload_date_formatted()}")
+                        
+                        # Full preview (collapsible)
+                        if doc.content:
+                            with st.expander("View full preview"):
+                                st.text(doc.content[:1000] + "..." if len(doc.content) > 1000 else doc.content)
+                    
+                    with col2:
+                        if st.button("🗑️ Delete", key=f"delete_{doc.id}", use_container_width=True):
+                            success, message = knowledge_base_service.delete_document(doc.id)
+                            if success:
+                                st.success(message)
+                                time.sleep(1)
+                                st.rerun()
+                            else:
+                                st.error(message)
+        
+        # Test search section
+        if documents:
+            st.markdown("---")
+            st.markdown("### Test Search")
+            st.markdown("Try searching your knowledge base to see what context would be retrieved.")
+            
+            search_query = st.text_input("Enter search query", placeholder="e.g., product features, pricing, case studies")
+            
+            if search_query:
+                with st.spinner("Searching..."):
+                    results = knowledge_base_service.search(search_query, k=3)
+                    
+                    if results:
+                        st.success(f"Found {len(results)} relevant chunks:")
+                        for i, result in enumerate(results, 1):
+                            st.markdown(f"**Result {i}** (Score: {result['score']:.3f}) - Source: {result['metadata'].get('source', 'Unknown')}")
+                            st.text(result['content'][:400] + "..." if len(result['content']) > 400 else result['content'])
+                            st.markdown("---")
+                    else:
+                        st.warning("No relevant results found")

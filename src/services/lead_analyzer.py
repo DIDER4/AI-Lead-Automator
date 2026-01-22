@@ -1,9 +1,9 @@
 """
 Lead Analyzer Service
-Orchestrates the complete lead analysis workflow
+Orchestrates the complete lead analysis workflow with RAG integration
 """
 
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
 import time
 
 from src.config import AppConfig, Constants, get_logger
@@ -20,18 +20,21 @@ class LeadAnalyzerError(Exception):
 
 
 class LeadAnalyzer:
-    """Orchestrates lead scraping and AI analysis"""
+    """Orchestrates lead scraping and AI analysis with RAG support"""
     
-    def __init__(self, config: AppConfig, data_manager: DataManager):
+    def __init__(self, config: AppConfig, data_manager: DataManager, 
+                 knowledge_base=None):
         """
         Initialize LeadAnalyzer
         
         Args:
             config: Application configuration
             data_manager: DataManager instance
+            knowledge_base: Optional KnowledgeBaseService instance for RAG
         """
         self.config = config
         self.data_manager = data_manager
+        self.knowledge_base = knowledge_base
         
         # Initialize API clients
         self.firecrawl_client = None
@@ -39,7 +42,10 @@ class LeadAnalyzer:
         
         self._initialize_clients()
         
-        logger.info("LeadAnalyzer initialized")
+        if self.knowledge_base:
+            logger.info("LeadAnalyzer initialized with Knowledge Base support")
+        else:
+            logger.info("LeadAnalyzer initialized (no Knowledge Base)")
     
     def _initialize_clients(self):
         """Initialize API clients based on configuration"""
@@ -122,11 +128,29 @@ class LeadAnalyzer:
         
         logger.info(f"Scraped {len(content)} characters")
         
-        # Step 2: Analyze with AI
+        # Step 2: Get RAG context if knowledge base available
+        rag_context = ""
+        if self.knowledge_base:
+            try:
+                # Use scraped content as query to find relevant company knowledge
+                search_query = f"{url} {content[:500]}"  # Use URL + content preview
+                rag_context = self.knowledge_base.get_context_for_prompt(
+                    query=search_query,
+                    max_chunks=3
+                )
+                if rag_context:
+                    logger.info("Retrieved RAG context from knowledge base")
+                else:
+                    logger.info("No relevant context found in knowledge base")
+            except Exception as e:
+                logger.warning(f"Error retrieving RAG context: {e}")
+        
+        # Step 3: Analyze with AI (with RAG context if available)
         user_profile = {
             'my_website': self.config.my_website,
             'my_value_proposition': self.config.my_value_proposition,
-            'my_icp': self.config.my_icp
+            'my_icp': self.config.my_icp,
+            'knowledge_base_context': rag_context  # Add RAG context
         }
         
         ai_result = self.ai_client.analyze_lead(content, user_profile, url)

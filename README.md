@@ -24,6 +24,15 @@ A comprehensive, secure, and modular desktop application for intelligent B2B lea
 - ✅ **SMS Generation**: Short message drafts
 - ✅ **Bulk Processing**: Multiple URLs with rate limiting
 - ✅ **Data Export**: Excel/CSV with GDPR-compliant mode
+- ✅ **Knowledge Base (RAG)**: Upload company documents for AI-enhanced analysis
+
+### **RAG & Knowledge Base**
+- **Document Upload**: PDF, TXT, DOCX support
+- **Semantic Search**: Find relevant context using embeddings (all-MiniLM-L6-v2)
+- **Local Vector Database**: ChromaDB for persistent storage
+- **Context Injection**: AI uses your company knowledge to personalize outreach
+- **Document Management**: Upload, view, delete documents
+- **Test Search**: Preview what context AI will retrieve
 
 ### **Security Features**
 - **Encryption**: Fernet symmetric encryption (256-bit) for API keys
@@ -36,7 +45,8 @@ A comprehensive, secure, and modular desktop application for intelligent B2B lea
 - **Home**: Welcome page with workflow explanation
 - **Settings**: Encrypted API key management
 - **Profile**: Define ICP and value proposition
-- **Lead Chat**: Single and bulk URL analysis
+- **Knowledge Base**: Upload and manage company documents for RAG
+- **Lead Chat**: Single and bulk URL analysis with RAG support
 - **Dashboard**: Visual analytics with Plotly charts
 
 ---
@@ -59,16 +69,19 @@ AI Lead Automator/
 │   │   ├── __init__.py
 │   │   ├── firecrawl.py                 # Firecrawl client with retry logic
 │   │   ├── openai_client.py             # OpenAI GPT-4 integration
-│   │   └── anthropic_client.py          # Anthropic Claude integration
+│   │   ├── anthropic_client.py          # Anthropic Claude integration
+│   │   └── mock_data.py                 # Mock data generator for test mode
 │   │
 │   ├── models/                          # Data models
 │   │   ├── __init__.py
-│   │   └── lead.py                      # Lead data model with validation
+│   │   ├── lead.py                      # Lead data model with validation
+│   │   └── document.py                  # Document data model for Knowledge Base
 │   │
 │   ├── services/                        # Business logic layer
 │   │   ├── __init__.py
 │   │   ├── data_manager.py              # Data persistence (JSON)
-│   │   └── lead_analyzer.py             # Orchestrates scraping + AI analysis
+│   │   ├── lead_analyzer.py             # Orchestrates scraping + AI analysis + RAG
+│   │   └── knowledge_base.py            # RAG service (embeddings, vector search)
 │   │
 │   ├── ui/                              # User interface
 │   │   ├── __init__.py
@@ -77,7 +90,7 @@ AI Lead Automator/
 │   │   │   └── charts.py                # Plotly charts, UI helpers
 │   │   └── pages/                       # Page rendering logic
 │   │       ├── __init__.py
-│   │       └── ui_pages.py              # All 5 pages (Home, Settings, Profile, Chat, Dashboard)
+│   │       └── ui_pages.py              # All 6 pages (Home, Settings, Profile, KB, Chat, Dashboard)
 │   │
 │   └── utils/                           # Utility modules
 │       ├── __init__.py
@@ -86,7 +99,12 @@ AI Lead Automator/
 ├── data/                                # Data storage (auto-created)
 │   ├── leads_data.json                  # Lead database
 │   ├── secret.key                       # Encryption key (DO NOT COMMIT)
-│   └── config.encrypted                 # Encrypted configuration
+│   ├── config.encrypted                 # Encrypted configuration
+│   ├── chroma_db/                       # ChromaDB vector database (DO NOT COMMIT)
+│   │   └── [vector embeddings]          # Persistent vector storage
+│   └── documents/                       # Uploaded knowledge base files (DO NOT COMMIT)
+│       ├── documents_metadata.json      # Document metadata tracking
+│       └── [uuid]_[filename]            # Stored original files
 │
 ├── logs/                                # Application logs (auto-created)
 │   └── app.log                          # Main application log
@@ -98,7 +116,8 @@ AI Lead Automator/
 ├── app.py                               # Main entry point
 ├── requirements.txt                     # All dependencies (production + development)
 ├── .env.example                         # Environment variables template
-└── .gitignore                           # Git ignore rules
+├── .gitignore                           # Git ignore rules
+└── RAG_IMPLEMENTATION.md                # RAG technical documentation
 ```
 
 ---
@@ -117,19 +136,22 @@ AI Lead Automator/
 
 ### **`src/api/`**
 - **`firecrawl.py`**: Web scraping with retry logic and comprehensive error handling
-- **`openai_client.py`**: GPT-4o-mini integration for lead analysis
-- **`anthropic_client.py`**: Claude 3.5 Sonnet as alternative AI provider
+- **`openai_client.py`**: GPT-4o-mini integration for lead analysis with RAG support
+- **`anthropic_client.py`**: Claude 3.5 Sonnet as alternative AI provider with RAG support
+- **`mock_data.py`**: Centralized mock data generator for test mode
 
 ### **`src/models/`**
 - **`lead.py`**: Type-safe Lead data model with validation and helper methods
+- **`document.py`**: Type-safe Document data model for Knowledge Base files
 
 ### **`src/services/`**
 - **`data_manager.py`**: JSON-based lead persistence with atomic writes
-- **`lead_analyzer.py`**: Orchestrates complete analysis workflow (scrape → AI → save)
+- **`lead_analyzer.py`**: Orchestrates complete analysis workflow (scrape → RAG → AI → save)
+- **`knowledge_base.py`**: RAG service for document ingestion, embeddings, and semantic search
 
 ### **`src/ui/`**
 - **`components/charts.py`**: Reusable UI components (charts, cards, metrics)
-- **`pages/ui_pages.py`**: All 5 page renderers with Streamlit components
+- **`pages/ui_pages.py`**: All 6 page renderers (Home, Settings, Profile, KB, Chat, Dashboard)
 
 ### **`src/utils/`**
 - **`gdpr.py`**: GDPR compliance utilities (data redaction, safe exports)
@@ -222,11 +244,91 @@ Once valid API keys are detected, test mode automatically deactivates and real A
 
 ---
 
+## Knowledge Base & RAG (Retrieval Augmented Generation)
+
+The application includes a powerful **Knowledge Base** feature that allows you to upload company documents and have the AI use this information to create more personalized and accurate lead analysis.
+
+### **How RAG Works**
+
+1. **Document Upload**: Upload PDFs, text files, or Word documents containing:
+   - Company information and value propositions
+   - Product specifications and features
+   - Case studies and success stories
+   - Pricing information
+   - Competitive advantages
+
+2. **Automatic Processing**:
+   - Documents are split into manageable chunks (1000 characters)
+   - Each chunk is converted into a vector embedding using semantic analysis
+   - Stored in a local ChromaDB database for fast retrieval
+
+3. **Intelligent Context Retrieval**:
+   - When analyzing a lead, the system searches your knowledge base
+   - Finds the 3 most relevant chunks based on semantic similarity
+   - Injects this context into the AI prompt
+
+4. **Enhanced Analysis**:
+   - AI generates emails referencing your actual products/services
+   - Lead scores consider fit with your documented offerings
+   - Outreach is personalized using your company's voice and examples
+
+### **Using the Knowledge Base**
+
+**Upload Documents:**
+```
+1. Navigate to "Knowledge Base" page
+2. Click "Choose a file" and select PDF/TXT/DOCX
+3. Click "Upload & Index"
+4. Document is automatically chunked and embedded
+```
+
+**Manage Documents:**
+- View all uploaded documents with metadata
+- See chunk count and file size
+- Delete documents you no longer need
+- Preview document content
+
+**Test Search:**
+- Enter a search query to test retrieval
+- See what context the AI would receive
+- Verify relevant information is being found
+
+**Integration with Lead Analysis:**
+- Knowledge Base is automatically used when analyzing leads
+- Status shown on Lead Chat page
+- No configuration needed - just upload and go!
+
+### **Best Practices**
+
+✅ **Do Upload:**
+- Product/service descriptions
+- Company mission and values
+- Case studies and testimonials
+- Pricing sheets and packages
+- FAQs and objection handlers
+
+❌ **Don't Upload:**
+- Personal customer data (GDPR)
+- Confidential internal documents
+- Legal contracts or NDAs
+- Sensitive financial information
+
+### **Technical Details**
+
+- **Embedding Model**: all-MiniLM-L6-v2 (384 dimensions)
+- **Vector Database**: ChromaDB (local, persistent)
+- **Chunking**: 1000 chars with 200 char overlap
+- **Retrieval**: Top 3 chunks by cosine similarity
+- **Storage**: `data/chroma_db/` and `data/documents/`
+
+---
+
 ## Performance Metrics
 
-- **Single Lead Analysis**: 5-10 seconds
+- **Single Lead Analysis**: 5-10 seconds (without KB) / 6-12 seconds (with KB)
   - Scraping: 2-3 seconds
   - AI Analysis: 2-5 seconds
+  - KB Search: 1-2 seconds (if KB active)
   - Saving: <1 second
 
 - **Bulk Processing**: ~50 URLs in 8 minutes
@@ -277,11 +379,14 @@ Once valid API keys are detected, test mode automatically deactivates and real A
 ### **Critical Files (DO NOT SHARE)**
 - `data/secret.key` - Fernet encryption key
 - `data/config.encrypted` - Encrypted API keys
+- `data/chroma_db/` - Vector database (contains embeddings)
+- `data/documents/` - Uploaded company documents
 - `.env` - Environment variables (if used)
 
 ### **Backup Recommendations**
 - Copy `data/secret.key` to secure backup location
 - Store encrypted config safely
+- Backup Knowledge Base: `data/chroma_db/` and `data/documents/`
 - Never commit these files to version control
 
 ---
@@ -367,7 +472,8 @@ pytest tests/ -v --cov=src
 
 ## Documentation
 
-- **README.md**: This file (complete guide)
+- **README.md**: This file (complete guide with RAG documentation)
+- **RAG_IMPLEMENTATION.md**: Technical deep-dive on RAG architecture
 - **.env.example**: Environment variables template
 - **Inline Documentation**: Comprehensive docstrings in all modules
 
@@ -399,6 +505,22 @@ streamlit run app.py
 - Verify account has credits
 - Test connection in Settings page
 
+**Knowledge Base Issues**
+```bash
+# If ChromaDB fails to load
+rm -rf data/chroma_db/
+# Restart app and re-upload documents
+
+# If embedding model download fails
+# Check internet connection
+# Model will auto-download on first run (~80MB)
+```
+
+**Memory Issues**
+- Close other applications
+- Reduce number of uploaded documents
+- Restart Streamlit application
+
 ---
 
 ## Support & Resources
@@ -408,11 +530,14 @@ streamlit run app.py
 - **Firecrawl**: https://docs.firecrawl.dev
 - **OpenAI**: https://platform.openai.com/docs
 - **Anthropic**: https://docs.anthropic.com
+- **ChromaDB**: https://docs.trychroma.com
+- **LangChain**: https://python.langchain.com/docs
 
 ### **Getting Help**
 - Check logs in `logs/app.log`
 - Run verification script: `python verify.py`
 - Review inline documentation in source code
+- Read RAG_IMPLEMENTATION.md for technical details
 
 ---
 
