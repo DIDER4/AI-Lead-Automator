@@ -180,6 +180,9 @@ class SecureConfigManager:
             # Rename to actual file (atomic on most systems)
             temp_file.replace(self.config_file)
             
+            # Clear cache after config change
+            self._clear_config_cache()
+            
             logger.info(f"Configuration saved successfully (keys: {list(sanitized.keys())})")
             return True
             
@@ -187,31 +190,82 @@ class SecureConfigManager:
             logger.error(f"Failed to save configuration: {e}")
             return False
     
-    def load(self) -> Dict:
+    def _clear_config_cache(self):
+        """Clear cached configuration data"""
+        try:
+            import streamlit as st
+            cache_key = f"config_data_{self.config_file}"
+            if cache_key in st.session_state:
+                del st.session_state[cache_key]
+            if f"{cache_key}_mtime" in st.session_state:
+                del st.session_state[f"{cache_key}_mtime"]
+        except Exception:
+            # Session state might not be available in all contexts
+            pass
+    
+    def load(self, use_cache: bool = True) -> Dict:
         """
         Load encrypted configuration
         
+        Args:
+            use_cache: Whether to use cached config if available
+            
         Returns:
             Configuration dictionary (empty if not exists)
         """
+        # Check cache first if enabled
+        if use_cache:
+            try:
+                import streamlit as st
+                cache_key = f"config_data_{self.config_file}"
+                
+                # Check if config file modification time changed
+                if self.config_file.exists():
+                    current_mtime = self.config_file.stat().st_mtime
+                    cached_mtime = st.session_state.get(f"{cache_key}_mtime", 0)
+                    
+                    if current_mtime == cached_mtime and cache_key in st.session_state:
+                        logger.debug("Using cached configuration data")
+                        return st.session_state[cache_key]
+                else:
+                    # If no config file exists, return cached empty dict if available
+                    if cache_key in st.session_state and st.session_state.get(f"{cache_key}_mtime") == 0:
+                        logger.debug("Using cached empty configuration")
+                        return st.session_state[cache_key]
+            except Exception:
+                # Session state might not be available
+                pass
+        
         if not self.config_file.exists():
             logger.debug("Configuration file does not exist")
-            return {}
+            config = {}
+        else:
+            try:
+                with open(self.config_file, 'rb') as f:
+                    encrypted_data = f.read()
+                
+                config = self.key_manager.decrypt_dict(encrypted_data)
+                logger.info(f"Configuration loaded (keys: {list(config.keys())})")
+                
+            except EncryptionError as e:
+                logger.error(f"Failed to load configuration: {e}")
+                config = {}
+            except Exception as e:
+                logger.error(f"Unexpected error loading configuration: {e}")
+                config = {}
         
-        try:
-            with open(self.config_file, 'rb') as f:
-                encrypted_data = f.read()
-            
-            config = self.key_manager.decrypt_dict(encrypted_data)
-            logger.info(f"Configuration loaded (keys: {list(config.keys())})")
-            return config
-            
-        except EncryptionError as e:
-            logger.error(f"Failed to load configuration: {e}")
-            return {}
-        except Exception as e:
-            logger.error(f"Unexpected error loading configuration: {e}")
-            return {}
+        # Cache the results
+        if use_cache:
+            try:
+                import streamlit as st
+                cache_key = f"config_data_{self.config_file}"
+                st.session_state[cache_key] = config
+                st.session_state[f"{cache_key}_mtime"] = self.config_file.stat().st_mtime if self.config_file.exists() else 0
+            except Exception:
+                # Session state might not be available
+                pass
+        
+        return config
     
     def delete(self) -> bool:
         """Delete configuration file"""

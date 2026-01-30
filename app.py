@@ -52,16 +52,31 @@ def render_sidebar(data_manager: DataManager, kb_stats: dict):
         ]
     )
     
-    # Quick stats
+    # Quick stats with caching
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Quick Stats")
     
-    leads = data_manager.load_all()
-    st.sidebar.metric("Total Leads", len(leads))
+    # Cache quick stats to avoid repeated calculations
+    cache_key = "sidebar_quick_stats"
+    if cache_key not in st.session_state or st.session_state.get(f"{cache_key}_page") != page:
+        leads = data_manager.load_all(use_cache=True)
+        
+        total_leads = len(leads)
+        avg_score = sum(l.lead_score for l in leads) / len(leads) if leads else 0
+        
+        st.session_state[cache_key] = {
+            'total_leads': total_leads,
+            'avg_score': avg_score
+        }
+        st.session_state[f"{cache_key}_page"] = page
+        logger.debug("Updated sidebar quick stats cache")
     
-    if leads:
-        avg_score = sum(l.lead_score for l in leads) / len(leads)
-        st.sidebar.metric("Avg Score", f"{avg_score:.0f}")
+    # Use cached stats
+    cached_stats = st.session_state[cache_key]
+    st.sidebar.metric("Total Leads", cached_stats['total_leads'])
+    
+    if cached_stats['total_leads'] > 0:
+        st.sidebar.metric("Avg Score", f"{cached_stats['avg_score']:.0f}")
     
     # KB stats
     if kb_stats['total_documents'] > 0:
@@ -89,22 +104,45 @@ def main():
         # Configure page
         configure_page()
         
-        # Initialize core managers
-        config_manager = SecureConfigManager()
-        data_manager = DataManager()
-        logger.info("Core managers initialized")
+        # Initialize core managers with session state caching
+        if 'config_manager' not in st.session_state:
+            st.session_state['config_manager'] = SecureConfigManager()
+            logger.debug("Initialized new SecureConfigManager")
+        config_manager = st.session_state['config_manager']
         
-        # Initialize Knowledge Base Service
-        try:
-            kb_service = KnowledgeBaseService()
-            kb_stats = kb_service.get_stats()
-            logger.info("Knowledge Base Service initialized successfully")
-        except Exception as e:
-            logger.warning(f"Knowledge Base Service failed to initialize: {e}")
-            kb_service = None
-            kb_stats = {'total_documents': 0, 'total_chunks': 0, 'doc_types': {}}
+        if 'data_manager' not in st.session_state:
+            st.session_state['data_manager'] = DataManager()
+            logger.debug("Initialized new DataManager")
+        data_manager = st.session_state['data_manager']
         
-        ui_pages = UIPages(config_manager, data_manager)
+        logger.debug("Core managers ready from session state")
+        
+        # Initialize Knowledge Base Service with caching
+        kb_service = None
+        kb_stats = {'total_documents': 0, 'total_chunks': 0, 'doc_types': {}}
+        
+        if 'kb_service_init_attempted' not in st.session_state:
+            try:
+                kb_service = KnowledgeBaseService()
+                kb_stats = kb_service.get_stats()
+                st.session_state['kb_service'] = kb_service
+                st.session_state['kb_stats'] = kb_stats
+                st.session_state['kb_service_init_attempted'] = True
+                logger.info("Knowledge Base Service initialized successfully")
+            except Exception as e:
+                logger.warning(f"Knowledge Base Service failed to initialize: {e}")
+                st.session_state['kb_service'] = None
+                st.session_state['kb_stats'] = kb_stats
+                st.session_state['kb_service_init_attempted'] = True
+        else:
+            # Use cached KB service
+            kb_service = st.session_state.get('kb_service')
+            kb_stats = st.session_state.get('kb_stats', kb_stats)
+            logger.debug("Using cached Knowledge Base Service")
+        
+        if 'ui_pages' not in st.session_state:
+            st.session_state['ui_pages'] = UIPages(config_manager, data_manager)
+        ui_pages = st.session_state['ui_pages']
         
         # Render sidebar and get selected page
         page = render_sidebar(data_manager, kb_stats)

@@ -31,8 +31,8 @@ class UIPages:
         """Render home page"""
         render_hero_section()
         
-        # Check if in test mode
-        config_dict = self.config_manager.load()
+        # Check if in test mode (cached)
+        config_dict = self.config_manager.load(use_cache=True)
         config = AppConfig(**config_dict) if config_dict else AppConfig()
         
         if not config.has_valid_firecrawl_key() or not config.has_valid_ai_key():
@@ -72,8 +72,13 @@ class UIPages:
             """)
         
         # Stats
-        leads = self.data_manager.load_all()
+        leads = self.data_manager.load_all(use_cache=True)
         if leads:
+            # Check if we're showing test data
+            is_test_mode = not config.has_valid_firecrawl_key() or not config.has_valid_ai_key()
+            if is_test_mode and any(lead.id and lead.id >= 9000 for lead in leads):
+                st.info("📊 **Test Mode**: Stats below show sample data. Configure API keys in Settings for real data.")
+            
             st.markdown("---")
             st.markdown("## Your Stats")
             render_metrics_row(leads)
@@ -217,7 +222,7 @@ class UIPages:
         """Render lead chat page"""
         st.title("Lead Chat & Analyzer")
         
-        config_dict = self.config_manager.load()
+        config_dict = self.config_manager.load(use_cache=True)
         config = AppConfig(**config_dict) if config_dict else AppConfig()
         
         # Check if in test mode
@@ -276,6 +281,10 @@ class UIPages:
                 success, message, lead_id = analyzer.analyze_and_save(url_input)
                 
                 if success:
+                    # Clear sidebar cache since we added new data
+                    if "sidebar_quick_stats" in st.session_state:
+                        del st.session_state["sidebar_quick_stats"]
+                    
                     show_success(f"Lead #{lead_id} analyzed!")
                     lead = self.data_manager.get_lead(lead_id)
                     if lead:
@@ -298,6 +307,10 @@ class UIPages:
                 progress.progress((idx + 1) / len(urls))
                 time.sleep(1)
             
+            # Clear sidebar cache since we added new data
+            if "sidebar_quick_stats" in st.session_state:
+                del st.session_state["sidebar_quick_stats"]
+            
             status.empty()
             progress.empty()
             show_success(f"Processed {len(urls)} leads!")
@@ -306,18 +319,34 @@ class UIPages:
         st.markdown("---")
         st.markdown("### Recent Analyses")
         
-        leads = self.data_manager.load_all()
+        leads = self.data_manager.load_all(use_cache=True)
+        
+        # Check if we're showing test data  
+        if (is_firecrawl_test or is_ai_test) and any(lead.id and lead.id >= 9000 for lead in leads):
+            st.info("📊 **Test Mode**: Recent analyses below show sample data to demonstrate functionality")
+        
         recent = sorted(leads, key=lambda x: x.timestamp, reverse=True)[:5]
         
-        for lead in recent:
-            with st.expander(f"{lead.company_name} - Score: {lead.lead_score}"):
-                render_lead_card(lead)
+        if recent:
+            for lead in recent:
+                with st.expander(f"{lead.company_name} - Score: {lead.lead_score}"):
+                    render_lead_card(lead)
+        else:
+            st.info("No analyses yet. Enter a URL above to start analyzing prospects.")
     
     def render_dashboard(self):
         """Render dashboard page"""
         st.title("Dashboard & Analytics")
         
-        leads = self.data_manager.load_all()
+        leads = self.data_manager.load_all(use_cache=True)
+        
+        # Check if we're showing test data
+        config_dict = self.config_manager.load(use_cache=True)
+        config = AppConfig(**config_dict) if config_dict else AppConfig()
+        is_test_mode = not config.has_valid_firecrawl_key() or not config.has_valid_ai_key()
+        
+        if is_test_mode and any(lead.id and lead.id >= 9000 for lead in leads):
+            st.info("📊 **Test Mode**: Showing sample data to demonstrate functionality. Configure API keys in Settings for real data.")
         
         if not leads:
             show_info("No leads yet. Go to Lead Chat to analyze prospects!")
