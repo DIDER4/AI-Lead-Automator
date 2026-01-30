@@ -1,17 +1,8 @@
 """
 AI Lead Automator - Production-Ready Modular Architecture
-Version: 2.0.0
 Tech Stack: Streamlit, Firecrawl, OpenAI/Anthropic, Pandas, Plotly
 Security: Fernet Encryption, Input Validation, GDPR Compliance
-Author: Senior Python Security Architect
 Date: January 2026
-
-Architecture:
-- Modular separation of concerns
-- Security-first design with encryption
-- Comprehensive error handling and logging
-- GDPR compliance utilities
-- Scalable and maintainable codebase
 """
 
 import streamlit as st
